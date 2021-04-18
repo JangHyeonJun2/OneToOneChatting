@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>로그인</title>
+    <!-- 합쳐지고 최소화된 최신 자바스크립트 -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+<form id="loginForm" method="post">
+    <div>
+        <h2>일반 정보로 로그인</h2><hr>
+        <table id="loginTable">
+            <tr>
+                <th><div id="buttonB1">이메일</div></th>
+                <td><input type="text" id="userEmail" name="userEmail" class="loginInput"></td>
+            </tr>
+            <tr>
+                <th><div id="buttonB2">비밀번호</div></th>
+                <td><input type="password" id="userPwd" name="userPwd" class="loginInput"></td>
+            </tr>
+        </table>
+        <input type="button" value="로그인" id="submitBtn" onclick="submitCheck()">
+    </div>
+</form>
+<button id="btn-signup" onclick="window.location.href='signup.html'">회원가입</button>
+<script>
+
+    function submitCheck() {
+        var userEmail  = $('#userEmail' ).val() ;
+        var userPwd = $('#userPwd').val() ;
+        $.ajax({
+            type : "POST",
+            url: '/api/login',
+            contentType: "application/json",
+            data: JSON.stringify({"userEmail":userEmail, "userPwd":userPwd}),
+            success: function(data) {
+                console.log(data);
+                localStorage.setItem("jwt",data.accessToken);
+
+
+                pageMove();
+            }
+        }) ;
+    }
+
+    function pageMove() {
+        var token = localStorage.getItem("jwt");
+        $.ajax({
+            type: "GET",
+            url: '/chat/findEmail',
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Content-type","application/json");
+                xhr.setRequestHeader("Authorization","Bearer " + token);
+            },
+            success: function (data) {
+                window.location.href=`/chat?email=${data}`;
+            }
+        })
+
+    }
+</script>
+</body>
+</html>

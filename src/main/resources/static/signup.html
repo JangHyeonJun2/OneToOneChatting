@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입</title>
+    <!-- 합쳐지고 최소화된 최신 자바스크립트 -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+<form id="loginForm">
+    <div>
+        <h2>일반 정보로 회원가입</h2>
+        <hr>
+        <table id="loginTable">
+            <tr>
+                <th>
+                    <div id="buttonB1">아이디</div>
+                </th>
+                <td><input type="text" id="signupId" name="userId" class="signupInput"></td>
+            </tr>
+            <tr>
+                <th>
+                    <div id="buttonB2">비밀번호</div>
+                </th>
+                <td><input type="password" id="signupPwd" name="userPwd" class="signupInput"></td>
+            </tr>
+            <tr>
+                <th>
+                    <div id="buttonB3">이메일</div>
+                </th>
+                <td><input type="email" id="signupEmail" name="userEmail" class="signupInput"></td>
+            </tr>
+        </table>
+        <input type="button" value="회원가입" id="submitBtn2" onclick="submitregister()">
+    </div>
+</form>
+
+<script>
+    function submitregister() {
+        var userId  = $('#signupId' ).val() ;
+        var userPwd = $('#signupPwd').val() ;
+        var userEmail = $('#signupEmail').val() ;
+        $.ajax({
+            type : "POST",
+            url: '/api/signup',
+            contentType: "application/json",
+            data: JSON.stringify({"userId":userId, "userPwd":userPwd, "userEmail" : userEmail}),
+            success: function(data) {
+                window.location.href="login.html" ; // home.do로 돌아가시면 됩니다.
+            }
+        }) ;
+    }
+</script>
+</body>
+</html>

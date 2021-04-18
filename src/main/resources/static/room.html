@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+
+    <!-- 합쳐지고 최소화된 최신 자바스크립트 -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- 합쳐지고 최소화된 최신 CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+
+    <!-- 부가적인 테마 -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+
+
+    <title>Title</title>
+</head>
+<body>
+<div class="container">
+    <br><br><br>
+    <div class="alert alert-danger" id="failMessage" style="display : none">
+        <strong>잠시 후 다시 시도해 주세요.</strong>
+    </div>
+    <div class="alert alert-success" id="comeMessage" style="display : none">
+        <strong>새로운 메세지가 도착했습니다!</strong>
+    </div>
+    <div class="alert alert-success" id="noticeCome" style="display : none">
+        <strong>새로운 알림이 도착했습니다!</strong>
+    </div>
+    <div class="alert alert-danger" id="nameMessage" style="display : none">
+        <strong>이름을 다시 확인해주세요!</strong>
+    </div>
+    <div class="container bootstrap snippet">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="portlet portlet-default">
+                    <div class="portlet-title">
+                        <h4 class="fa fa-circle text-green">채팅방 목록</h4>
+                        <hr>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <div id="chat" class="panel-collapse collapse in">
+                    <div id="space" class="portlet-body chat-widget"
+                         style="overflow-y : auto; width:auto; height:400px;">
+                        <div class='row' th:each="chatRoom:${chatRooms}">
+                            <div class='col-lg-12'>
+                                <div class='media'>
+                                    <div class='media-body'>
+                                        <h4 class='media-heading' th:text="${chatRoom.writer}"></h4>
+                                        <h4 class="small pull-right"
+                                            th:text="${#temporals.format(chatRoom.time, 'yyyy-MM-dd HH:mm:ss')}"></h4>
+                                    </div>
+                                    <p th:text="${chatRoom.lastMessage}"></p>
+                                    <a class="btn btn-default pull-right"
+                                       th:href="@{/personalChat/(chatRoomId = ${chatRoom.id}, email = ${userEmail})}">입장</a>
+                                </div>
+                            </div>
+                            <hr>
+                        </div>
+                    </div>
+                    <div class="portlet-footer">
+                        <div class="row">
+                            <div class="form-group col-xs-4">
+                            </div>
+                        </div>
+                        <div class="row" style="height:90px">
+                            <!--onsubmit : form전송을 하기 전에 입력된 데이터의 유효성을 체크하기 위해 사용하는 이벤트.-->
+                            <form class="form-signing" action="/chat/newChat" method="POST" onsubmit="return emailChk();">
+                                <div class="form-group col-xs-10">
+                                    <input type="text" id="receiver" name="receiver" class="form-control"
+                                           placeholder="상대방 email을 입력하세요" maxlength="20" required>
+
+                                    <input type="hidden" id="sender" th:value="${userEmail}" name="sender"
+                                           class="form-control" placeholder="상대방 이름을 입력하세요" maxlength="20" required>
+                                </div>
+                                <div class="form-group col-xs-2">
+                                    <button type="submit" class="btn btn-default pull-right">채팅방 만들기</button>
+                                    <div class="clearfix"></div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="pop" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">알림!</h4>
+                </div>
+                <div class="modal-body">
+                    로그아웃 하시겠습니까?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" id="y">예</button>
+                    <button type="button" class="btn btn-default" id="n">아니오</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/webjars/sockjs-client/1.1.2/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/2.3.3-1/stomp.min.js"></script>
+<script th:inline="javascript">
+    /* <![CDATA[*/
+    var userEmail = [[${userEmail}]];
+    /* ]]> */
+
+    var stompClient = null;
+    connect();
+    function connect() {
+        var socket = new SockJS("/chatting");
+        stompClient = Stomp.over(socket);
+        console.log(stompClient);
+        stompClient.connect({}, function () {
+            stompClient.subscribe('/topic/' + userEmail, function (e) {
+                if(e.body.toString() == "notice"){
+                    alertClosing('noticeCome',2000);
+                }
+                else{
+                    alertClosing('comeMessage',2000);
+                }
+            });
+        });
+    }
+
+    function disconnect() {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+        }
+    }
+    //사용자가 현재 페이지를 떠나 다른 페이지로 이동하려 할 때나 창을 닫으려고 할 때 beforeunload 핸들러에서 추가 확인을 요청할 수 있습니다.
+    window.onbeforeunload = function(e){
+        disconnect();
+    };
+
+    function alertClosing(selector, delay){
+        document.getElementById(selector).style.display = "block";
+        window.setTimeout(function(){
+            document.getElementById(selector).style.display = "none";
+        },delay);
+    }
+
+    $(function(){
+        $("#receiver").autocomplete({
+            source : "autocomplete",
+            autoFocus : true,
+            delay : 100,
+            select: function( event, ui ) {
+                // 만약 검색리스트에서 선택하였을때 선택한 데이터에 의한 이벤트발생
+                this.value = ui.item.value;
+                $("#receiver").val(ui.item.value);
+                return false;
+            }
+        });
+    });
+
+    // async: false 속성이 추가되었습니다.
+    // jQuery의 Ajax호출은 async: true가 기본이며,
+    // 이 속성을 기입하지 않는다면 기본적으로 비동기식으로 동작하게 됩니다.
+    // 하지만 이 속성을 false로 설정하게되면 동기식방식으로 이제 ajax를 호출하여 서버에서 응답을 기다렸다가 응답을 모두 완료한 후
+    // 다음 로직을 실행하는 동기식으로 변경한 것입니다.
+    function emailChk(){
+        var flag = false;
+        $.ajax({
+            type:'GET',
+            url: '/users/emailChk/' + $("#receiver").val(),
+            contentType: 'application/json; charset=utf-8',
+            async: false
+        }).done(function(e){
+            if(e == "success"){
+                console.log(e);
+                flag = true;
+            }
+            else {
+                flag = false;
+                alertClosing("nameMessage",2000);
+            }
+        }).fail(function(e){
+            flag = false;
+            alertClosing("failMessage",2000);
+        })
+        return flag;
+    }
+</script>
+</body>
+</html>
